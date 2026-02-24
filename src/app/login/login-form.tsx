@@ -8,7 +8,13 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-export function LoginForm({ registered }: { registered: boolean }) {
+export function LoginForm({
+  registered,
+  inviteToken,
+}: {
+  registered: boolean;
+  inviteToken: string | null;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +32,7 @@ export function LoginForm({ registered }: { registered: boolean }) {
     });
     setLoading(false);
     if (result?.ok) {
-      router.push("/app");
+      router.push(inviteToken ? `/invite/${inviteToken}` : "/app");
       return;
     }
     setError("Bledny email lub haslo.");
@@ -39,6 +45,11 @@ export function LoginForm({ registered }: { registered: boolean }) {
         <p className="mt-2 text-sm text-zinc-600">
           Zaloguj sie, aby zarzadzac wspolnymi wyjazdami.
         </p>
+        {inviteToken ? (
+          <p className="mt-3 rounded-md bg-sky-50 px-3 py-2 text-sm text-sky-700">
+            Zaloguj sie, aby zaakceptowac zaproszenie do grupy.
+          </p>
+        ) : null}
         {registered ? (
           <p className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
             Konto utworzone. Zaloguj sie.
@@ -66,7 +77,10 @@ export function LoginForm({ registered }: { registered: boolean }) {
         </form>
         <p className="mt-4 text-sm text-zinc-600">
           Nie masz konta?{" "}
-          <Link href="/register" className="font-medium text-sky-700 underline">
+          <Link
+            href={inviteToken ? `/register?invite=${encodeURIComponent(inviteToken)}` : "/register"}
+            className="font-medium text-sky-700 underline"
+          >
             Zarejestruj sie
           </Link>
         </p>

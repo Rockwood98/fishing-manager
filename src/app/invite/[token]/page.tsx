@@ -12,10 +12,10 @@ export default async function InvitePage({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md items-center px-4">
-      <Card className="w-full">
+      <Card className="w-full p-6">
         <h1 className="text-xl font-semibold">Zaproszenie do grupy</h1>
         <p className="mt-2 text-sm text-zinc-600">
-          Kliknij poniżej, aby dołączyć do ekipy.
+          Jesli masz konto, zaloguj sie i kliknij akceptacje. Jesli nie, zaloz konto.
         </p>
         <form
           action={async () => {
@@ -24,11 +24,22 @@ export default async function InvitePage({
           }}
           className="mt-4"
         >
-          <Button className="w-full">Akceptuję zaproszenie</Button>
+          <Button className="w-full">Akceptuje zaproszenie</Button>
         </form>
-        <Link href="/login" className="mt-3 inline-block text-sm text-sky-700 underline">
-          Wróć do logowania
-        </Link>
+        <div className="mt-4 flex flex-wrap gap-3 text-sm">
+          <Link
+            href={`/login?invite=${encodeURIComponent(token)}`}
+            className="text-sky-700 underline"
+          >
+            Mam konto - logowanie
+          </Link>
+          <Link
+            href={`/register?invite=${encodeURIComponent(token)}`}
+            className="text-sky-700 underline"
+          >
+            Nie mam konta - rejestracja
+          </Link>
+        </div>
       </Card>
     </main>
   );

@@ -3,7 +3,10 @@
 import { randomBytes } from "crypto";
 import { GroupRole, InviteStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 import { z } from "zod";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAppContext } from "@/server/context";
 import { PACKING_CATEGORIES } from "@/lib/constants";
@@ -87,7 +90,12 @@ export async function createInviteAction(formData: FormData) {
 }
 
 export async function acceptInviteAction(token: string) {
-  const { userId } = await getAppContext();
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    redirect(`/login?invite=${encodeURIComponent(token)}`);
+  }
+  const userId = session.user.id;
+
   const invite = await prisma.invite.findUnique({ where: { token } });
   if (!invite) throw new Error("Nie znaleziono zaproszenia");
   if (invite.status !== InviteStatus.PENDING || invite.expiresAt < new Date()) {
@@ -106,6 +114,7 @@ export async function acceptInviteAction(token: string) {
   ]);
   revalidatePath("/app");
   revalidatePath("/app/settings");
+  redirect("/app");
 }
 
 export async function deleteInviteAction(formData: FormData) {

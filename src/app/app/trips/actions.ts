@@ -126,3 +126,33 @@ export async function removeTripParticipantAction(formData: FormData) {
 
   revalidatePath("/app/trips");
 }
+
+export async function addTripParticipantAction(formData: FormData) {
+  const ctx = await getAppContext(GroupRole.ADMIN);
+  const tripId = z.string().cuid().parse(formData.get("tripId"));
+  const userId = z.string().cuid().parse(formData.get("userId"));
+
+  const trip = await prisma.trip.findUnique({
+    where: { id: tripId },
+    select: { id: true, groupId: true },
+  });
+  if (!trip || trip.groupId !== ctx.group.id) {
+    throw new Error("Nie znaleziono wyjazdu");
+  }
+
+  const membership = await prisma.membership.findUnique({
+    where: { groupId_userId: { groupId: ctx.group.id, userId } },
+    select: { id: true },
+  });
+  if (!membership) {
+    throw new Error("Uzytkownik nie nalezy do tej grupy");
+  }
+
+  await prisma.tripParticipant.upsert({
+    where: { tripId_userId: { tripId, userId } },
+    create: { tripId, userId },
+    update: {},
+  });
+
+  revalidatePath("/app/trips");
+}

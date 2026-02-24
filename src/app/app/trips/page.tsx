@@ -1,12 +1,16 @@
-import {
+﻿import {
   addDays,
+  differenceInCalendarDays,
   eachDayOfInterval,
   endOfMonth,
   endOfWeek,
   format,
+  isAfter,
+  isBefore,
   isSameMonth,
   isWithinInterval,
   parse,
+  startOfDay,
   startOfMonth,
   startOfToday,
   startOfWeek,
@@ -17,8 +21,12 @@ import { Input } from "@/components/ui/input";
 import { LoadingSubmitButton } from "@/components/ui/loading-submit-button";
 import { prisma } from "@/lib/prisma";
 import { getAppContext } from "@/server/context";
-import { createTripAction, deleteTripAction } from "./actions";
-import { removeTripParticipantAction } from "./actions";
+import {
+  addTripParticipantAction,
+  createTripAction,
+  deleteTripAction,
+  removeTripParticipantAction,
+} from "./actions";
 import { LocationPicker } from "./location-picker";
 import { TripsControls } from "./trips-controls";
 import { WeatherPanel } from "./weather-panel";
@@ -26,6 +34,24 @@ import { WeatherPanel } from "./weather-panel";
 function durationDays(startsAt: Date, endsAt: Date) {
   const ms = endsAt.getTime() - startsAt.getTime();
   return Math.max(1, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+}
+
+function tripStatus(startsAt: Date, endsAt: Date) {
+  const now = new Date();
+  if (isAfter(now, endsAt)) {
+    return { label: "Odbyta", className: "bg-zinc-100 text-zinc-700" };
+  }
+  if (isBefore(now, startsAt)) {
+    const daysLeft = differenceInCalendarDays(startOfDay(startsAt), startOfDay(now));
+    if (daysLeft <= 0) {
+      return { label: "Start dzisiaj", className: "bg-amber-100 text-amber-700" };
+    }
+    return {
+      label: `Do wyjazdu: ${daysLeft} dni`,
+      className: "bg-sky-100 text-sky-700",
+    };
+  }
+  return { label: "Trwa", className: "bg-emerald-100 text-emerald-700" };
 }
 
 type ViewMode = "list" | "week" | "month";
@@ -42,9 +68,7 @@ type TripWeatherDaily = {
   weatherCode?: number;
 };
 
-function buildDailyWeatherMap(
-  trips: Array<{ id: string; weatherCache: unknown }>,
-) {
+function buildDailyWeatherMap(trips: Array<{ id: string; weatherCache: unknown }>) {
   const out = new Map<string, Map<string, TripWeatherDaily>>();
   for (const trip of trips) {
     const cache = trip.weatherCache as { daily?: TripWeatherDaily[] } | null;
@@ -58,18 +82,18 @@ function buildDailyWeatherMap(
 }
 
 function weatherIcon(day: TripWeatherDaily | null) {
-  if (!day) return "•";
+  if (!day) return "*";
   const code = day.weatherCode;
   if (typeof code === "number") {
-    if (code === 0) return "☀️";
-    if ([1, 2, 3, 45, 48].includes(code)) return "☁️";
-    if ([51, 53, 55, 56, 57, 61, 63, 65, 80, 81, 82].includes(code)) return "🌧️";
-    if ([71, 73, 75, 77, 85, 86].includes(code)) return "❄️";
-    if ([95, 96, 99].includes(code)) return "⛈️";
+    if (code === 0) return "SUN";
+    if ([1, 2, 3, 45, 48].includes(code)) return "CLOUD";
+    if ([51, 53, 55, 56, 57, 61, 63, 65, 80, 81, 82].includes(code)) return "RAIN";
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return "SNOW";
+    if ([95, 96, 99].includes(code)) return "STORM";
   }
-  if ((day.precipitationSum ?? 0) > 0.8) return "🌧️";
-  if ((day.precipitationSum ?? 0) > 0.1) return "☁️";
-  return "☀️";
+  if ((day.precipitationSum ?? 0) > 0.8) return "RAIN";
+  if ((day.precipitationSum ?? 0) > 0.1) return "CLOUD";
+  return "SUN";
 }
 
 function avgTemp(day: TripWeatherDaily | null) {
@@ -193,7 +217,7 @@ export default async function TripsPage({
                               <div key={trip.id} className="rounded bg-sky-50 px-1.5 py-1 text-[11px]">
                                 <p className="truncate font-medium text-zinc-800">{trip.title}</p>
                                 <p className="mt-0.5 text-zinc-600">
-                                  {weatherIcon(weatherDay)} {temp !== null ? `${temp}°C` : "--"}
+                                  {weatherIcon(weatherDay)} {temp !== null ? `${temp} C` : "--"}
                                 </p>
                               </div>
                             );
@@ -225,7 +249,7 @@ export default async function TripsPage({
                         <li key={trip.id} className="rounded bg-zinc-50 px-2 py-1">
                           <p>{trip.title}</p>
                           <p className="text-xs text-zinc-600">
-                            {weatherIcon(weatherDay)} {temp !== null ? `${temp}°C` : "--"}
+                            {weatherIcon(weatherDay)} {temp !== null ? `${temp} C` : "--"}
                           </p>
                         </li>
                       );
@@ -240,67 +264,105 @@ export default async function TripsPage({
 
         {view === "list" ? (
           <div className="mt-3 grid gap-2">
-            {trips.map((trip) => (
-              <div key={trip.id} className="rounded-xl border border-zinc-200 p-3">
-                <p className="font-semibold">{trip.title}</p>
-                <p className="text-sm text-zinc-600">
-                  {format(trip.startsAt, "dd MMM yyyy HH:mm", { locale: pl })} -{" "}
-                  {format(trip.endsAt, "dd MMM yyyy HH:mm", { locale: pl })} ·{" "}
-                  {durationDays(trip.startsAt, trip.endsAt)} dni
-                </p>
-                <p className="text-sm">
-                  Miejsce: {trip.location?.name} ({trip.location?.latitude}, {trip.location?.longitude})
-                </p>
-                <p className="mt-1 text-sm">
-                  Uczestnicy:
-                </p>
-                <div className="mt-1 flex flex-wrap gap-2">
-                  {(trip.participants.length
-                    ? trip.participants.map((p) => ({ id: p.user.id, name: p.user.name }))
-                    : members.map((m) => ({ id: m.user.id, name: m.user.name }))
-                  ).map((participant) => (
-                    <div
-                      key={`${trip.id}-${participant.id}`}
-                      className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs"
-                    >
-                      <span>{participant.name}</span>
-                      {ctx.membership.role !== "MEMBER" ? (
-                        <form action={removeTripParticipantAction}>
-                          <input type="hidden" name="tripId" value={trip.id} />
-                          <input type="hidden" name="userId" value={participant.id} />
-                          <button
-                            type="submit"
-                            className="rounded px-1 text-rose-600 hover:bg-rose-50"
-                            aria-label={`Usun ${participant.name} z wyjazdu`}
-                            title="Usun uczestnika"
-                          >
-                            ×
-                          </button>
-                        </form>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-                <details className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50">
-                  <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium text-sky-700">
-                    Pokaz pogode
-                  </summary>
-                  <div className="p-2">
-                    <WeatherPanel tripId={trip.id} cached={trip.weatherCache as never} />
+            {trips.map((trip) => {
+              const status = tripStatus(trip.startsAt, trip.endsAt);
+              const tripParticipants = trip.participants.length
+                ? trip.participants.map((p) => ({ id: p.user.id, name: p.user.name }))
+                : members.map((m) => ({ id: m.user.id, name: m.user.name }));
+              const participantIds = new Set(tripParticipants.map((participant) => participant.id));
+              const availableMembers = members.filter((member) => !participantIds.has(member.userId));
+
+              return (
+                <div key={trip.id} className="rounded-xl border border-zinc-200 p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="font-semibold">{trip.title}</p>
+                    <span className={`rounded-full px-2 py-1 text-xs font-medium ${status.className}`}>
+                      {status.label}
+                    </span>
                   </div>
-                </details>
-                {ctx.membership.role !== "MEMBER" ? (
-                  <form action={deleteTripAction} className="mt-2">
-                    <input type="hidden" name="tripId" value={trip.id} />
-                    <LoadingSubmitButton
-                      idleText="Usun wyjazd"
-                      pendingText="Usuwanie..."
-                      variant="danger"
-                    />
-                  </form>
-                ) : null}
-              </div>
-            ))}
+                  <p className="text-sm text-zinc-600">
+                    {format(trip.startsAt, "dd MMM yyyy HH:mm", { locale: pl })} -{" "}
+                    {format(trip.endsAt, "dd MMM yyyy HH:mm", { locale: pl })} · {durationDays(trip.startsAt, trip.endsAt)} dni
+                  </p>
+                  <p className="text-sm">
+                    Miejsce: {trip.location?.name} ({trip.location?.latitude}, {trip.location?.longitude})
+                  </p>
+                  <p className="mt-1 text-sm">Uczestnicy:</p>
+                  <div className="mt-1 flex flex-wrap gap-2">
+                    {tripParticipants.map((participant) => (
+                      <div
+                        key={`${trip.id}-${participant.id}`}
+                        className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs"
+                      >
+                        <span>{participant.name}</span>
+                        {ctx.membership.role !== "MEMBER" ? (
+                          <form action={removeTripParticipantAction}>
+                            <input type="hidden" name="tripId" value={trip.id} />
+                            <input type="hidden" name="userId" value={participant.id} />
+                            <LoadingSubmitButton
+                              idleText="Usun"
+                              pendingText="..."
+                              variant="ghost"
+                              className="h-6 px-2 text-[11px] text-rose-600"
+                            />
+                          </form>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                  {ctx.membership.role !== "MEMBER" ? (
+                    <div className="mt-2">
+                      {availableMembers.length ? (
+                        <form action={addTripParticipantAction} className="flex flex-wrap items-center gap-2">
+                          <input type="hidden" name="tripId" value={trip.id} />
+                          <select
+                            name="userId"
+                            required
+                            className="h-9 rounded-xl border border-zinc-300 bg-white px-3 text-xs"
+                            defaultValue=""
+                          >
+                            <option value="" disabled>
+                              Dodaj uczestnika...
+                            </option>
+                            {availableMembers.map((member) => (
+                              <option key={member.userId} value={member.userId}>
+                                {member.user.name}
+                              </option>
+                            ))}
+                          </select>
+                          <LoadingSubmitButton
+                            idleText="Dodaj uczestnika"
+                            pendingText="Dodawanie..."
+                            variant="secondary"
+                            className="h-9 px-3 text-xs"
+                          />
+                        </form>
+                      ) : (
+                        <p className="text-xs text-zinc-500">Wszyscy czlonkowie grupy sa juz dodani.</p>
+                      )}
+                    </div>
+                  ) : null}
+                  <details className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50">
+                    <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium text-sky-700">
+                      Pokaz pogode
+                    </summary>
+                    <div className="p-2">
+                      <WeatherPanel tripId={trip.id} cached={trip.weatherCache as never} />
+                    </div>
+                  </details>
+                  {ctx.membership.role !== "MEMBER" ? (
+                    <form action={deleteTripAction} className="mt-2">
+                      <input type="hidden" name="tripId" value={trip.id} />
+                      <LoadingSubmitButton
+                        idleText="Usun wyjazd"
+                        pendingText="Usuwanie..."
+                        variant="danger"
+                      />
+                    </form>
+                  ) : null}
+                </div>
+              );
+            })}
             {!trips.length ? <p className="text-sm text-zinc-500">Brak wyjazdow.</p> : null}
           </div>
         ) : null}
@@ -308,3 +370,4 @@ export default async function TripsPage({
     </div>
   );
 }
+

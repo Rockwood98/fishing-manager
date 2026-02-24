@@ -64,16 +64,25 @@ export async function createInviteAction(formData: FormData) {
   const email = (formData.get("email")?.toString() || "").trim();
   const token = randomBytes(20).toString("hex");
 
-  await prisma.invite.create({
-    data: {
-      groupId: group.id,
-      token,
-      email: email || null,
-      createdById: userId,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-      role: GroupRole.MEMBER,
-    },
-  });
+  await prisma.$transaction([
+    prisma.invite.updateMany({
+      where: {
+        groupId: group.id,
+        status: InviteStatus.PENDING,
+      },
+      data: { status: InviteStatus.REVOKED },
+    }),
+    prisma.invite.create({
+      data: {
+        groupId: group.id,
+        token,
+        email: email || null,
+        createdById: userId,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+        role: GroupRole.MEMBER,
+      },
+    }),
+  ]);
   revalidatePath("/app/settings");
 }
 
@@ -96,5 +105,30 @@ export async function acceptInviteAction(token: string) {
     }),
   ]);
   revalidatePath("/app");
+  revalidatePath("/app/settings");
+}
+
+export async function deleteInviteAction(formData: FormData) {
+  const { group, membership } = await getAppContext(GroupRole.ADMIN);
+  if (membership.role === GroupRole.MEMBER) {
+    throw new Error("Brak uprawnien");
+  }
+
+  const inviteId = formData.get("inviteId")?.toString();
+  if (!inviteId) throw new Error("Brak ID zaproszenia");
+
+  const invite = await prisma.invite.findUnique({ where: { id: inviteId } });
+  if (!invite || invite.groupId !== group.id) {
+    throw new Error("Nie znaleziono zaproszenia");
+  }
+  if (invite.status !== InviteStatus.PENDING) {
+    throw new Error("Mozna usuwac tylko aktywne zaproszenia");
+  }
+
+  await prisma.invite.update({
+    where: { id: invite.id },
+    data: { status: InviteStatus.REVOKED },
+  });
+
   revalidatePath("/app/settings");
 }

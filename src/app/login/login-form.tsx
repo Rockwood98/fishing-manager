@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 
 export function LoginForm({ registered }: { registered: boolean }) {
   const router = useRouter();
-  const [email, setEmail] = useState("adam@wedka.pl");
-  const [password, setPassword] = useState("test12345");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 

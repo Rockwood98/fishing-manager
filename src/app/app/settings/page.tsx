@@ -1,12 +1,10 @@
-import Link from "next/link";
-import { GroupRole } from "@prisma/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { prisma } from "@/lib/prisma";
 import { PACKING_CATEGORIES } from "@/lib/constants";
 import { getAppContext } from "@/server/context";
-import { createGroupAction, createInviteAction } from "./actions";
+import { createGroupAction, createInviteAction, deleteInviteAction } from "./actions";
 
 export default async function SettingsPage() {
   const ctx = await getAppContext();
@@ -52,24 +50,40 @@ export default async function SettingsPage() {
 
       <Card>
         <h2 className="font-semibold">Zaproszenia</h2>
-        {ctx.membership.role !== GroupRole.MEMBER ? (
-          <form action={createInviteAction} className="mt-3 flex flex-wrap gap-2">
-            <Input name="email" placeholder="Email (opcjonalnie)" className="max-w-sm" />
-            <Button type="submit">Generuj link</Button>
-          </form>
-        ) : (
-          <p className="mt-3 text-sm text-zinc-500">
-            Tylko admin/owner moze tworzyc zaproszenia.
-          </p>
-        )}
+        <form action={createInviteAction} className="mt-3 flex flex-wrap gap-2">
+          <Input name="email" placeholder="Email (opcjonalnie)" className="max-w-sm" />
+          <Button type="submit">Generuj nowy link</Button>
+        </form>
+        <p className="mt-3 text-sm text-zinc-500">
+          Po wygenerowaniu nowego linku stare aktywne zaproszenia sa automatycznie uniewazniane.
+        </p>
         <ul className="mt-3 space-y-2 text-sm">
           {groups.flatMap((g) =>
             g.group.invites.map((invite) => (
-              <li key={invite.id} className="rounded-xl border border-zinc-200 p-3">
-                <p className="text-zinc-600">Status: {invite.status}</p>
-                <Link className="break-all text-sky-700 underline" href={`/invite/${invite.token}`}>
-                  {`${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/invite/${invite.token}`}
-                </Link>
+              <li
+                key={invite.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 p-3"
+              >
+                <div>
+                  <p className="font-medium text-zinc-700">
+                    {invite.email || "Zaproszenie bez emaila"}
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    Status: {invite.status} | Wazne do:{" "}
+                    {new Date(invite.expiresAt).toLocaleString("pl-PL")}
+                  </p>
+                </div>
+                <form action={deleteInviteAction}>
+                  <input type="hidden" name="inviteId" value={invite.id} />
+                  <Button
+                    type="submit"
+                    variant="danger"
+                    className="h-9 px-3"
+                    disabled={invite.status !== "PENDING"}
+                  >
+                    Usun link
+                  </Button>
+                </form>
               </li>
             )),
           )}

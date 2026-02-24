@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { LoadingSubmitButton } from "@/components/ui/loading-submit-button";
 import {
   calculateSettlements,
   calculateSplitwiseBalances,
@@ -121,9 +121,11 @@ export default async function BudgetPage() {
               </div>
             </div>
 
-            <Button type="submit" className="md:col-span-2">
-              Dodaj wydatek
-            </Button>
+            <LoadingSubmitButton
+              idleText="Dodaj wydatek"
+              pendingText="Zapisywanie..."
+              className="md:col-span-2"
+            />
           </form>
         </Card>
 
@@ -154,9 +156,12 @@ export default async function BudgetPage() {
             <Input name="amount" type="number" step="0.01" placeholder="Kwota splaty" required />
             <Input name="entryDate" type="datetime-local" required />
             <Input name="note" placeholder="Opis (opcjonalnie)" className="md:col-span-2" />
-            <Button type="submit" variant="secondary" className="md:col-span-2">
-              Dodaj splate
-            </Button>
+            <LoadingSubmitButton
+              idleText="Dodaj splate"
+              pendingText="Zapisywanie..."
+              variant="secondary"
+              className="md:col-span-2"
+            />
           </form>
         </Card>
       </div>

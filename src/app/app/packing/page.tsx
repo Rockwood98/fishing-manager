@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { LoadingSubmitButton } from "@/components/ui/loading-submit-button";
 import { getCategoryIcon } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { getAppContext } from "@/server/context";
@@ -94,18 +94,22 @@ export default async function PackingPage({
                   required
                   className="max-w-sm"
                 />
-                <Button type="submit" variant="secondary">
-                  Zapisz aktualna liste jako szablon
-                </Button>
+                <LoadingSubmitButton
+                  idleText="Zapisz aktualna liste jako szablon"
+                  pendingText="Zapisywanie..."
+                  variant="secondary"
+                />
               </form>
               <div className="mt-3 flex flex-wrap gap-2">
                 {templateNames.map((name) => (
                   <form key={name} action={applyTemplateAction}>
                     <input type="hidden" name="tripId" value={selectedTrip.id} />
                     <input type="hidden" name="templateName" value={name} />
-                    <Button type="submit" variant="secondary">
-                      Uzyj: {name}
-                    </Button>
+                    <LoadingSubmitButton
+                      idleText={`Uzyj: ${name}`}
+                      pendingText="Stosowanie..."
+                      variant="secondary"
+                    />
                   </form>
                 ))}
                 {!templateNames.length ? (
@@ -138,9 +142,11 @@ export default async function PackingPage({
                   </form>
                   <form action={removeTripItemAction}>
                     <input type="hidden" name="itemId" value={item.id} />
-                    <Button type="submit" variant="ghost">
-                      Usun
-                    </Button>
+                    <LoadingSubmitButton
+                      idleText="Usun"
+                      pendingText="Usuwanie..."
+                      variant="ghost"
+                    />
                   </form>
                 </li>
               ))}

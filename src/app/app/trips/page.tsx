@@ -12,9 +12,9 @@ import {
   startOfWeek,
 } from "date-fns";
 import { pl } from "date-fns/locale";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { LoadingSubmitButton } from "@/components/ui/loading-submit-button";
 import { prisma } from "@/lib/prisma";
 import { getAppContext } from "@/server/context";
 import { createTripAction, deleteTripAction } from "./actions";
@@ -144,9 +144,11 @@ export default async function TripsPage({
           </label>
           <LocationPicker />
           <div className="md:col-span-2 xl:col-span-3">
-            <Button type="submit" className="w-full sm:w-auto">
-              Dodaj wyjazd
-            </Button>
+            <LoadingSubmitButton
+              idleText="Dodaj wyjazd"
+              pendingText="Tworzenie wyjazdu..."
+              className="w-full sm:w-auto"
+            />
           </div>
         </form>
       </Card>
@@ -264,9 +266,11 @@ export default async function TripsPage({
                 {ctx.membership.role !== "MEMBER" ? (
                   <form action={deleteTripAction} className="mt-2">
                     <input type="hidden" name="tripId" value={trip.id} />
-                    <Button type="submit" variant="danger">
-                      Usun wyjazd
-                    </Button>
+                    <LoadingSubmitButton
+                      idleText="Usun wyjazd"
+                      pendingText="Usuwanie..."
+                      variant="danger"
+                    />
                   </form>
                 ) : null}
               </div>

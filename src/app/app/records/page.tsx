@@ -1,9 +1,14 @@
+import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { LoadingSubmitButton } from "@/components/ui/loading-submit-button";
 import { prisma } from "@/lib/prisma";
 import { getAppContext } from "@/server/context";
-import { createCatchRecordAction } from "./actions";
+import {
+  createCatchRecordAction,
+  deleteCatchRecordAction,
+  updateCatchRecordAction,
+} from "./actions";
 import { RecordsCharts } from "./charts";
 
 function groupCount(values: string[]) {
@@ -82,7 +87,7 @@ export default async function RecordsPage() {
           <Input name="baitName" placeholder="Przyneta / zaneta" />
           <Input name="method" placeholder="Metoda" />
           <Input name="photoUrl" placeholder="URL zdjecia (MVP)" />
-          <Button type="submit">Zapisz rekord</Button>
+          <LoadingSubmitButton idleText="Zapisz rekord" pendingText="Zapisywanie..." />
         </form>
       </Card>
 
@@ -120,6 +125,97 @@ export default async function RecordsPage() {
       </div>
 
       <RecordsCharts byMonth={byMonth} byHour={byHour} />
+
+      <Card>
+        <h2 className="font-semibold">Wszystkie rekordy</h2>
+        <ul className="mt-3 space-y-2">
+          {records.map((record) => (
+            <li key={record.id} className="rounded-xl border border-zinc-200 p-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="font-medium">
+                    {record.speciesName} - {record.lengthCm} cm
+                    {record.weightKg ? `, ${record.weightKg} kg` : ""}
+                  </p>
+                  <p className="text-sm text-zinc-600">
+                    {format(record.caughtAt, "dd.MM.yyyy HH:mm")} | {record.createdBy.name}
+                  </p>
+                  <p className="text-sm text-zinc-600">
+                    {record.fisheryName ? `Lowisko: ${record.fisheryName}` : "Lowisko: -"} |{" "}
+                    {record.method ? `Metoda: ${record.method}` : "Metoda: -"}
+                  </p>
+                </div>
+                <form action={deleteCatchRecordAction}>
+                  <input type="hidden" name="recordId" value={record.id} />
+                  <LoadingSubmitButton
+                    idleText="Usun"
+                    pendingText="Usuwanie..."
+                    variant="danger"
+                  />
+                </form>
+              </div>
+
+              <details className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50">
+                <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium text-sky-700">
+                  Edytuj rekord
+                </summary>
+                <form action={updateCatchRecordAction} className="grid gap-2 p-3 md:grid-cols-3">
+                  <input type="hidden" name="recordId" value={record.id} />
+                  <Input name="speciesName" defaultValue={record.speciesName} required />
+                  <Input
+                    name="lengthCm"
+                    type="number"
+                    step="0.1"
+                    defaultValue={record.lengthCm}
+                    required
+                  />
+                  <Input
+                    name="weightKg"
+                    type="number"
+                    step="0.01"
+                    defaultValue={record.weightKg ?? ""}
+                  />
+                  <label className="grid min-w-0 gap-1">
+                    <span className="text-xs text-zinc-500">Data i godzina</span>
+                    <div className="trip-datetime-shell">
+                      <input
+                        name="caughtAt"
+                        type="datetime-local"
+                        required
+                        className="trip-datetime"
+                        defaultValue={format(record.caughtAt, "yyyy-MM-dd'T'HH:mm")}
+                      />
+                    </div>
+                  </label>
+                  <select
+                    name="tripId"
+                    defaultValue={record.tripId ?? ""}
+                    className="h-10 rounded-xl border border-zinc-300 bg-white px-3 text-sm"
+                  >
+                    <option value="">Bez wyjazdu</option>
+                    {trips.map((trip) => (
+                      <option key={trip.id} value={trip.id}>
+                        {trip.title}
+                      </option>
+                    ))}
+                  </select>
+                  <Input name="fisheryName" defaultValue={record.fisheryName ?? ""} />
+                  <Input name="baitName" defaultValue={record.baitName ?? ""} />
+                  <Input name="method" defaultValue={record.method ?? ""} />
+                  <Input name="photoUrl" defaultValue={record.photoUrl ?? ""} />
+                  <div className="md:col-span-3">
+                    <LoadingSubmitButton
+                      idleText="Zapisz zmiany"
+                      pendingText="Zapisywanie..."
+                    />
+                  </div>
+                </form>
+              </details>
+            </li>
+          ))}
+          {!records.length ? <li className="text-sm text-zinc-500">Brak rekordow.</li> : null}
+        </ul>
+      </Card>
     </div>
   );
 }

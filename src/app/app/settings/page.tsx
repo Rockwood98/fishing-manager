@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { LoadingSubmitButton } from "@/components/ui/loading-submit-button";
 import { prisma } from "@/lib/prisma";
 import { PACKING_CATEGORIES } from "@/lib/constants";
 import { getAppContext } from "@/server/context";
@@ -44,7 +44,7 @@ export default async function SettingsPage() {
           <p className="mt-1 text-sm text-zinc-500">Stworz oddzielna ekipe i zapros znajomych.</p>
           <form action={createGroupAction} className="mt-3 flex gap-2">
             <Input name="name" placeholder="Np. Ekipa na zasiadki" required />
-            <Button type="submit">Utworz</Button>
+            <LoadingSubmitButton idleText="Utworz" pendingText="Tworzenie..." />
           </form>
         </Card>
       </div>
@@ -53,7 +53,7 @@ export default async function SettingsPage() {
         <h2 className="font-semibold">Zaproszenia</h2>
         <form action={createInviteAction} className="mt-3 flex flex-wrap gap-2">
           <Input name="email" placeholder="Email (opcjonalnie)" className="max-w-sm" />
-          <Button type="submit">Generuj nowy link</Button>
+          <LoadingSubmitButton idleText="Generuj nowy link" pendingText="Generowanie..." />
         </form>
         <p className="mt-3 text-sm text-zinc-500">
           Po wygenerowaniu nowego linku stare aktywne zaproszenia sa automatycznie uniewazniane.
@@ -81,14 +81,13 @@ export default async function SettingsPage() {
                 </div>
                 <form action={deleteInviteAction}>
                   <input type="hidden" name="inviteId" value={invite.id} />
-                  <Button
-                    type="submit"
+                  <LoadingSubmitButton
+                    idleText="Usun link"
+                    pendingText="Usuwanie..."
                     variant="danger"
                     className="h-9 px-3"
                     disabled={invite.status !== "PENDING"}
-                  >
-                    Usun link
-                  </Button>
+                  />
                 </form>
               </li>
             )),

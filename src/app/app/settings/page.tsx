@@ -59,7 +59,9 @@ export default async function SettingsPage() {
         </p>
         <ul className="mt-3 space-y-2 text-sm">
           {groups.flatMap((g) =>
-            g.group.invites.map((invite) => (
+            g.group.invites
+              .filter((invite) => invite.status === "PENDING")
+              .map((invite) => (
               <li
                 key={invite.id}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 p-3"

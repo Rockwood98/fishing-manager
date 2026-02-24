@@ -3,14 +3,19 @@ import { Input } from "@/components/ui/input";
 import { LoadingSubmitButton } from "@/components/ui/loading-submit-button";
 import { prisma } from "@/lib/prisma";
 import { PACKING_CATEGORIES } from "@/lib/constants";
-import { getAppContext } from "@/server/context";
+import { requireSession } from "@/lib/session";
 import { createGroupAction, createInviteAction, deleteInviteAction } from "./actions";
 import { InviteLinkActions } from "./invite-link-actions";
 
 export default async function SettingsPage() {
-  const ctx = await getAppContext();
+  const session = await requireSession();
+  const userId = session.user?.id;
+  if (!userId) {
+    return null;
+  }
+
   const groups = await prisma.membership.findMany({
-    where: { userId: ctx.userId },
+    where: { userId },
     include: { group: { include: { memberships: { include: { user: true } }, invites: true } } },
   });
 

@@ -93,7 +93,7 @@ export function LocationPicker() {
         </p>
       ) : (
         <p className="text-xs text-zinc-500">
-          Mozesz wybrac z podpowiedzi albo wpisac recznie wspolrzedne.
+          Podpowiedzi sa ograniczone do Polski (z fallbackiem do Europy).
         </p>
       )}
     </div>

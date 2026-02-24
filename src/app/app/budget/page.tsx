@@ -56,7 +56,7 @@ export default async function BudgetPage() {
     <div className="space-y-4">
       <Card className="overflow-hidden border-0 bg-gradient-to-br from-sky-600 to-cyan-700 text-white">
         <p className="text-xs uppercase tracking-wider text-white/80">Budzet grupy</p>
-        <h1 className="mt-1 text-2xl font-bold">Rozliczenia jak w Splitwise</h1>
+        <h1 className="mt-1 text-2xl font-bold">Rozliczanie</h1>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <div className="rounded-xl bg-white/15 p-3">
             <p className="text-xs text-white/80">Wydatki</p>
@@ -103,7 +103,12 @@ export default async function BudgetPage() {
                 </option>
               ))}
             </select>
-            <Input name="entryDate" type="datetime-local" required />
+            <label className="grid min-w-0 gap-1">
+              <span className="text-xs text-zinc-500">Data i godzina</span>
+              <div className="trip-datetime-shell">
+                <input name="entryDate" type="datetime-local" required className="trip-datetime" />
+              </div>
+            </label>
             <Input name="note" placeholder="Opis (opcjonalnie)" />
 
             <div className="md:col-span-2">
@@ -154,7 +159,12 @@ export default async function BudgetPage() {
               ))}
             </select>
             <Input name="amount" type="number" step="0.01" placeholder="Kwota splaty" required />
-            <Input name="entryDate" type="datetime-local" required />
+            <label className="grid min-w-0 gap-1">
+              <span className="text-xs text-zinc-500">Data i godzina</span>
+              <div className="trip-datetime-shell">
+                <input name="entryDate" type="datetime-local" required className="trip-datetime" />
+              </div>
+            </label>
             <Input name="note" placeholder="Opis (opcjonalnie)" className="md:col-span-2" />
             <LoadingSubmitButton
               idleText="Dodaj splate"

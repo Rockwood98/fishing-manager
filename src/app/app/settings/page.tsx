@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { PACKING_CATEGORIES } from "@/lib/constants";
 import { requireSession } from "@/lib/session";
 import { createGroupAction, createInviteAction, deleteInviteAction } from "./actions";
+import { GroupMembersModal } from "./group-members-modal";
 import { InviteLinkActions } from "./invite-link-actions";
 
 export default async function SettingsPage() {
@@ -39,6 +40,15 @@ export default async function SettingsPage() {
                 <p className="mt-1 text-xs text-zinc-500">
                   Czlonkow: {m.group.memberships.length}
                 </p>
+                <GroupMembersModal
+                  groupName={m.group.name}
+                  members={m.group.memberships.map((membership) => ({
+                    id: membership.user.id,
+                    name: membership.user.name,
+                    email: membership.user.email,
+                    role: membership.role,
+                  }))}
+                />
               </li>
             ))}
           </ul>

@@ -8,11 +8,14 @@ import {
   Fish,
   Home,
   ListChecks,
+  LogOut,
   PiggyBank,
   Settings,
 } from "lucide-react";
+import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
 
 const links = [
   { href: "/app", label: "Start", icon: Home },
@@ -26,6 +29,7 @@ const links = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
   const pendingStartedAtRef = useRef<number>(0);
   const MIN_LOADING_MS = 350;
 
@@ -39,8 +43,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-zinc-50">
+      <header className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-3 py-2 md:px-6">
+          <p className="text-sm font-semibold text-zinc-800">Fishing Manager</p>
+          <Button
+            variant="ghost"
+            className="h-9 gap-2 px-3"
+            disabled={signingOut}
+            onClick={async () => {
+              setSigningOut(true);
+              await signOut({ callbackUrl: "/login" });
+            }}
+          >
+            <LogOut className="size-4" />
+            <span>{signingOut ? "Wylogowanie..." : "Wyloguj"}</span>
+          </Button>
+        </div>
+      </header>
       {pendingHref ? (
-        <div className="sticky top-0 z-50 border-b border-sky-100 bg-sky-50 px-3 py-1 text-xs text-sky-700">
+        <div className="sticky top-[50px] z-40 border-b border-sky-100 bg-sky-50 px-3 py-1 text-xs text-sky-700 md:top-[53px]">
           <span className="inline-flex items-center gap-2">
             <Spinner className="size-3 text-sky-700" />
             Ladowanie...

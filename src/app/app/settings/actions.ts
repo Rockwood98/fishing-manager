@@ -7,9 +7,9 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
+import { PACKING_CATEGORIES } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { getAppContext } from "@/server/context";
-import { PACKING_CATEGORIES } from "@/lib/constants";
 
 const createGroupSchema = z.object({
   name: z.string().min(3).max(80),
@@ -62,7 +62,7 @@ export async function createGroupAction(formData: FormData) {
 export async function createInviteAction(formData: FormData) {
   const { group, membership, userId } = await getAppContext(GroupRole.ADMIN);
   if (membership.role === GroupRole.MEMBER) {
-    throw new Error("Brak uprawnień");
+    throw new Error("Brak uprawnien");
   }
   const email = (formData.get("email")?.toString() || "").trim();
   const token = randomBytes(20).toString("hex");
@@ -86,6 +86,7 @@ export async function createInviteAction(formData: FormData) {
       },
     }),
   ]);
+
   revalidatePath("/app/settings");
 }
 
@@ -97,21 +98,29 @@ export async function acceptInviteAction(token: string) {
   const userId = session.user.id;
 
   const invite = await prisma.invite.findUnique({ where: { token } });
-  if (!invite) throw new Error("Nie znaleziono zaproszenia");
-  if (invite.status !== InviteStatus.PENDING || invite.expiresAt < new Date()) {
-    throw new Error("Zaproszenie wygasło");
+  if (!invite) {
+    redirect(`/invite/${encodeURIComponent(token)}?status=not_found`);
   }
-  await prisma.$transaction([
-    prisma.membership.upsert({
-      where: { groupId_userId: { groupId: invite.groupId, userId } },
-      create: { groupId: invite.groupId, userId, role: invite.role },
-      update: {},
-    }),
-    prisma.invite.update({
-      where: { id: invite.id },
-      data: { status: InviteStatus.ACCEPTED, acceptedById: userId },
-    }),
-  ]);
+  if (invite.status !== InviteStatus.PENDING || invite.expiresAt < new Date()) {
+    redirect(`/invite/${encodeURIComponent(token)}?status=expired`);
+  }
+
+  try {
+    await prisma.$transaction([
+      prisma.membership.upsert({
+        where: { groupId_userId: { groupId: invite.groupId, userId } },
+        create: { groupId: invite.groupId, userId, role: invite.role },
+        update: {},
+      }),
+      prisma.invite.update({
+        where: { id: invite.id },
+        data: { status: InviteStatus.ACCEPTED, acceptedById: userId },
+      }),
+    ]);
+  } catch {
+    redirect(`/invite/${encodeURIComponent(token)}?status=error`);
+  }
+
   revalidatePath("/app");
   revalidatePath("/app/settings");
   redirect("/app");

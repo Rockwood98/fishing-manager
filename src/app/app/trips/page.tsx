@@ -18,6 +18,7 @@ import { LoadingSubmitButton } from "@/components/ui/loading-submit-button";
 import { prisma } from "@/lib/prisma";
 import { getAppContext } from "@/server/context";
 import { createTripAction, deleteTripAction } from "./actions";
+import { removeTripParticipantAction } from "./actions";
 import { LocationPicker } from "./location-picker";
 import { TripsControls } from "./trips-controls";
 import { WeatherPanel } from "./weather-panel";
@@ -99,7 +100,7 @@ export default async function TripsPage({
       where: { groupId: ctx.group.id },
       include: {
         location: true,
-        participants: { include: { user: { select: { name: true } } } },
+        participants: { include: { user: { select: { id: true, name: true } } } },
       },
       orderBy: { startsAt: "asc" },
     }),
@@ -251,10 +252,35 @@ export default async function TripsPage({
                   Miejsce: {trip.location?.name} ({trip.location?.latitude}, {trip.location?.longitude})
                 </p>
                 <p className="mt-1 text-sm">
-                  Uczestnicy:{" "}
-                  {trip.participants.map((p) => p.user.name).join(", ") ||
-                    members.map((m) => m.user.name).join(", ")}
+                  Uczestnicy:
                 </p>
+                <div className="mt-1 flex flex-wrap gap-2">
+                  {(trip.participants.length
+                    ? trip.participants.map((p) => ({ id: p.user.id, name: p.user.name }))
+                    : members.map((m) => ({ id: m.user.id, name: m.user.name }))
+                  ).map((participant) => (
+                    <div
+                      key={`${trip.id}-${participant.id}`}
+                      className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs"
+                    >
+                      <span>{participant.name}</span>
+                      {ctx.membership.role !== "MEMBER" ? (
+                        <form action={removeTripParticipantAction}>
+                          <input type="hidden" name="tripId" value={trip.id} />
+                          <input type="hidden" name="userId" value={participant.id} />
+                          <button
+                            type="submit"
+                            className="rounded px-1 text-rose-600 hover:bg-rose-50"
+                            aria-label={`Usun ${participant.name} z wyjazdu`}
+                            title="Usun uczestnika"
+                          >
+                            ×
+                          </button>
+                        </form>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
                 <details className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50">
                   <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium text-sky-700">
                     Pokaz pogode

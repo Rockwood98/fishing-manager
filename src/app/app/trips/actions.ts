@@ -99,3 +99,30 @@ export async function deleteTripAction(formData: FormData) {
   revalidatePath("/app/trips");
   revalidatePath("/app/packing");
 }
+
+export async function removeTripParticipantAction(formData: FormData) {
+  const ctx = await getAppContext(GroupRole.ADMIN);
+  const tripId = z.string().cuid().parse(formData.get("tripId"));
+  const userId = z.string().cuid().parse(formData.get("userId"));
+
+  const trip = await prisma.trip.findUnique({
+    where: { id: tripId },
+    select: { id: true, groupId: true },
+  });
+  if (!trip || trip.groupId !== ctx.group.id) {
+    throw new Error("Nie znaleziono wyjazdu");
+  }
+
+  const participantsCount = await prisma.tripParticipant.count({
+    where: { tripId },
+  });
+  if (participantsCount <= 1) {
+    throw new Error("Wyjazd musi miec przynajmniej jednego uczestnika");
+  }
+
+  await prisma.tripParticipant.deleteMany({
+    where: { tripId, userId },
+  });
+
+  revalidatePath("/app/trips");
+}

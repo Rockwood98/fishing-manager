@@ -51,6 +51,11 @@ export async function createTripAction(formData: FormData) {
     },
   });
 
+  const memberIds = await prisma.membership.findMany({
+    where: { groupId: ctx.group.id },
+    select: { userId: true },
+  });
+
   const trip = await prisma.trip.create({
     data: {
       groupId: ctx.group.id,
@@ -61,8 +66,9 @@ export async function createTripAction(formData: FormData) {
       createdById: ctx.userId,
       updatedById: ctx.userId,
       participants: {
-        create: {
-          userId: ctx.userId,
+        createMany: {
+          data: memberIds.map((member) => ({ userId: member.userId })),
+          skipDuplicates: true,
         },
       },
     },

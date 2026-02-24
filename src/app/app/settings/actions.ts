@@ -1,0 +1,100 @@
+"use server";
+
+import { randomBytes } from "crypto";
+import { GroupRole, InviteStatus } from "@prisma/client";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { getAppContext } from "@/server/context";
+import { PACKING_CATEGORIES } from "@/lib/constants";
+
+const createGroupSchema = z.object({
+  name: z.string().min(3).max(80),
+});
+
+export async function createGroupAction(formData: FormData) {
+  const session = await getAppContext();
+  const parsed = createGroupSchema.safeParse({
+    name: formData.get("name"),
+  });
+  if (!parsed.success) throw new Error("Niepoprawna nazwa grupy");
+
+  const group = await prisma.group.create({
+    data: {
+      name: parsed.data.name,
+      memberships: {
+        create: {
+          userId: session.userId,
+          role: GroupRole.OWNER,
+        },
+      },
+    },
+  });
+
+  await prisma.species.createMany({
+    data: [
+      { groupId: group.id, name: "Karp" },
+      { groupId: group.id, name: "Szczupak" },
+      { groupId: group.id, name: "Sandacz" },
+      { groupId: group.id, name: "Lin" },
+    ],
+  });
+
+  await prisma.packingCatalogItem.createMany({
+    data: PACKING_CATEGORIES.map((cat, i) => ({
+      groupId: group.id,
+      name: `${cat.icon} ${cat.name}`,
+      category: cat.name,
+      icon: cat.icon,
+      sortOrder: i,
+      createdById: session.userId,
+      updatedById: session.userId,
+    })),
+  });
+
+  revalidatePath("/app");
+  revalidatePath("/app/settings");
+}
+
+export async function createInviteAction(formData: FormData) {
+  const { group, membership, userId } = await getAppContext(GroupRole.ADMIN);
+  if (membership.role === GroupRole.MEMBER) {
+    throw new Error("Brak uprawnień");
+  }
+  const email = (formData.get("email")?.toString() || "").trim();
+  const token = randomBytes(20).toString("hex");
+
+  await prisma.invite.create({
+    data: {
+      groupId: group.id,
+      token,
+      email: email || null,
+      createdById: userId,
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+      role: GroupRole.MEMBER,
+    },
+  });
+  revalidatePath("/app/settings");
+}
+
+export async function acceptInviteAction(token: string) {
+  const { userId } = await getAppContext();
+  const invite = await prisma.invite.findUnique({ where: { token } });
+  if (!invite) throw new Error("Nie znaleziono zaproszenia");
+  if (invite.status !== InviteStatus.PENDING || invite.expiresAt < new Date()) {
+    throw new Error("Zaproszenie wygasło");
+  }
+  await prisma.$transaction([
+    prisma.membership.upsert({
+      where: { groupId_userId: { groupId: invite.groupId, userId } },
+      create: { groupId: invite.groupId, userId, role: invite.role },
+      update: {},
+    }),
+    prisma.invite.update({
+      where: { id: invite.id },
+      data: { status: InviteStatus.ACCEPTED, acceptedById: userId },
+    }),
+  ]);
+  revalidatePath("/app");
+  revalidatePath("/app/settings");
+}

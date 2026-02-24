@@ -1,0 +1,273 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum GroupRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum BudgetEntryType {
+  DEPOSIT
+  EXPENSE
+}
+
+model User {
+  id                 String       @id @default(cuid())
+  name               String
+  email              String       @unique
+  passwordHash       String
+  timezone           String       @default("Europe/Warsaw")
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  memberships        Membership[]
+  createdTrips       Trip[]       @relation("TripCreatedBy")
+  updatedTrips       Trip[]       @relation("TripUpdatedBy")
+  tripParticipations TripParticipant[]
+  createdCatalog     PackingCatalogItem[] @relation("CatalogCreatedBy")
+  updatedCatalog     PackingCatalogItem[] @relation("CatalogUpdatedBy")
+  createdTripItems   TripPackingItem[]    @relation("TripItemCreatedBy")
+  updatedTripItems   TripPackingItem[]    @relation("TripItemUpdatedBy")
+  createdCatch       CatchRecord[]        @relation("CatchCreatedBy")
+  updatedCatch       CatchRecord[]        @relation("CatchUpdatedBy")
+  createdBudget      BudgetEntry[]        @relation("BudgetCreatedBy")
+  updatedBudget      BudgetEntry[]        @relation("BudgetUpdatedBy")
+  paidBudgetEntries  BudgetEntry[]        @relation("BudgetPaidBy")
+  sentInvites        Invite[]             @relation("InviteCreatedBy")
+  acceptedInvites    Invite[]             @relation("InviteAcceptedBy")
+}
+
+model Group {
+  id            String              @id @default(cuid())
+  name          String
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  memberships   Membership[]
+  invites       Invite[]
+  locations     Location[]
+  trips         Trip[]
+  catalogItems  PackingCatalogItem[]
+  species       Species[]
+  baits         Bait[]
+  catchRecords  CatchRecord[]
+  budgetEntries BudgetEntry[]
+}
+
+model Membership {
+  id        String    @id @default(cuid())
+  groupId   String
+  userId    String
+  role      GroupRole @default(MEMBER)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  group     Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+model Invite {
+  id            String       @id @default(cuid())
+  groupId        String
+  email          String?
+  token          String       @unique
+  role           GroupRole    @default(MEMBER)
+  status         InviteStatus  @default(PENDING)
+  expiresAt      DateTime
+  createdById    String
+  acceptedById   String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  group          Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy      User          @relation("InviteCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  acceptedBy     User?         @relation("InviteAcceptedBy", fields: [acceptedById], references: [id], onDelete: SetNull)
+
+  @@index([groupId, status])
+}
+
+model Location {
+  id          String   @id @default(cuid())
+  groupId      String
+  name         String
+  latitude     Float
+  longitude    Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  group        Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  trips        Trip[]
+
+  @@index([groupId])
+}
+
+model Trip {
+  id             String            @id @default(cuid())
+  groupId        String
+  title          String
+  startsAt       DateTime
+  endsAt         DateTime
+  locationId     String?
+  notes          String?
+  weatherCache   Json?
+  createdById    String
+  updatedById    String
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  group          Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  location       Location?         @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  participants   TripParticipant[]
+  packingItems   TripPackingItem[]
+  catches        CatchRecord[]
+  budgetEntries  BudgetEntry[]
+  createdBy      User              @relation("TripCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy      User              @relation("TripUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@index([groupId, startsAt])
+}
+
+model TripParticipant {
+  id        String   @id @default(cuid())
+  tripId     String
+  userId     String
+  createdAt  DateTime @default(now())
+  trip       Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, userId])
+  @@index([userId])
+}
+
+model PackingCatalogItem {
+  id            String   @id @default(cuid())
+  groupId       String
+  name          String
+  category      String
+  icon          String?
+  sortOrder     Int      @default(0)
+  usedCount     Int      @default(0)
+  lastUsedAt    DateTime?
+  archived      Boolean  @default(false)
+  createdById   String
+  updatedById   String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  group         Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  tripItems     TripPackingItem[]
+  createdBy     User     @relation("CatalogCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy     User     @relation("CatalogUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@index([groupId, category])
+  @@index([groupId, usedCount, lastUsedAt])
+}
+
+model TripPackingItem {
+  id                  String   @id @default(cuid())
+  tripId              String
+  catalogItemId       String?
+  name                String
+  category            String
+  icon                String?
+  checked             Boolean  @default(false)
+  sortOrder           Int      @default(0)
+  source              String   @default("catalog")
+  createdById         String
+  updatedById         String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  trip                Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  catalogItem         PackingCatalogItem? @relation(fields: [catalogItemId], references: [id], onDelete: SetNull)
+  createdBy           User     @relation("TripItemCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy           User     @relation("TripItemUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@index([tripId, checked, sortOrder])
+}
+
+model Species {
+  id        String   @id @default(cuid())
+  groupId   String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  catches   CatchRecord[]
+
+  @@unique([groupId, name])
+}
+
+model Bait {
+  id        String   @id @default(cuid())
+  groupId   String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  catches   CatchRecord[]
+
+  @@unique([groupId, name])
+}
+
+model CatchRecord {
+  id           String   @id @default(cuid())
+  groupId      String
+  tripId       String?
+  speciesId    String?
+  speciesName  String
+  lengthCm     Float
+  weightKg     Float?
+  caughtAt     DateTime
+  fisheryName  String?
+  baitId       String?
+  baitName     String?
+  method       String?
+  photoUrl     String?
+  notes        String?
+  createdById  String
+  updatedById  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  group        Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  trip         Trip?    @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  species      Species? @relation(fields: [speciesId], references: [id], onDelete: SetNull)
+  bait         Bait?    @relation(fields: [baitId], references: [id], onDelete: SetNull)
+  createdBy    User     @relation("CatchCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy    User     @relation("CatchUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@index([groupId, speciesName, lengthCm])
+  @@index([groupId, caughtAt])
+}
+
+model BudgetEntry {
+  id           String         @id @default(cuid())
+  groupId      String
+  type         BudgetEntryType
+  category     String
+  amount       Decimal        @db.Decimal(12, 2)
+  description  String?
+  paidById     String
+  tripId       String?
+  entryDate    DateTime
+  createdById  String
+  updatedById  String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  group        Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  paidBy       User           @relation("BudgetPaidBy", fields: [paidById], references: [id], onDelete: Restrict)
+  trip         Trip?          @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  createdBy    User           @relation("BudgetCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  updatedBy    User           @relation("BudgetUpdatedBy", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@index([groupId, entryDate])
+}

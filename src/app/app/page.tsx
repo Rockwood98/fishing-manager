@@ -1,3 +1,4 @@
+import { differenceInCalendarDays, isAfter, isBefore, startOfDay } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { calculateSplitwiseBalances } from "@/lib/budget/splitwise";
 import { prisma } from "@/lib/prisma";
@@ -36,11 +37,18 @@ function calculateSettlementsDetailed(balances: BalanceLite[]) {
 
 export default async function DashboardPage() {
   const ctx = await getAppContext();
-  const [tripsCount, recordsCount, openItems, entries, members] = await Promise.all([
+  const [tripsCount, recordsCount, nextTrip, lastTrip, entries, members] = await Promise.all([
     prisma.trip.count({ where: { groupId: ctx.group.id } }),
     prisma.catchRecord.count({ where: { groupId: ctx.group.id } }),
-    prisma.tripPackingItem.count({
-      where: { trip: { groupId: ctx.group.id }, checked: false },
+    prisma.trip.findFirst({
+      where: { groupId: ctx.group.id, startsAt: { gte: new Date() } },
+      orderBy: { startsAt: "asc" },
+      select: { id: true, title: true, startsAt: true, endsAt: true },
+    }),
+    prisma.trip.findFirst({
+      where: { groupId: ctx.group.id },
+      orderBy: { startsAt: "desc" },
+      select: { id: true, title: true, startsAt: true, endsAt: true },
     }),
     prisma.budgetEntry.findMany({
       where: { groupId: ctx.group.id },
@@ -65,6 +73,22 @@ export default async function DashboardPage() {
   const mySettlements = calculateSettlementsDetailed(balances).filter(
     (s) => s.fromUserId === ctx.userId,
   );
+  const now = new Date();
+  const nearestTrip = nextTrip ?? lastTrip;
+  const nearestTripStatus = (() => {
+    if (!nearestTrip) {
+      return { title: "Brak wyjazdow", detail: "Dodaj pierwszy wyjazd w zakladce Wyjazdy." };
+    }
+    if (isAfter(now, nearestTrip.endsAt)) {
+      return { title: nearestTrip.title, detail: "Odbyta" };
+    }
+    if (isBefore(now, nearestTrip.startsAt)) {
+      const daysLeft = differenceInCalendarDays(startOfDay(nearestTrip.startsAt), startOfDay(now));
+      if (daysLeft <= 0) return { title: nearestTrip.title, detail: "Start dzisiaj" };
+      return { title: nearestTrip.title, detail: `Do wyjazdu: ${daysLeft} dni` };
+    }
+    return { title: nearestTrip.title, detail: "Trwa" };
+  })();
 
   return (
     <div className="space-y-4">
@@ -86,8 +110,9 @@ export default async function DashboardPage() {
           <p className="mt-1 text-3xl font-bold text-emerald-700">{recordsCount}</p>
         </Card>
         <Card className="bg-white/90">
-          <p className="text-sm text-zinc-500">Otwarte rzeczy</p>
-          <p className="mt-1 text-3xl font-bold text-amber-700">{openItems}</p>
+          <p className="text-sm text-zinc-500">Najblizszy wyjazd</p>
+          <p className="mt-1 text-base font-bold text-amber-700">{nearestTripStatus.title}</p>
+          <p className="mt-1 text-sm text-zinc-600">{nearestTripStatus.detail}</p>
         </Card>
         <Card className="bg-white/90">
           <p className="text-sm text-zinc-500">Twoj bilans</p>

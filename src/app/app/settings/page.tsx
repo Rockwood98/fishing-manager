@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { PACKING_CATEGORIES } from "@/lib/constants";
 import { getAppContext } from "@/server/context";
 import { createGroupAction, createInviteAction, deleteInviteAction } from "./actions";
+import { InviteLinkActions } from "./invite-link-actions";
 
 export default async function SettingsPage() {
   const ctx = await getAppContext();
@@ -74,6 +75,9 @@ export default async function SettingsPage() {
                     Status: {invite.status} | Wazne do:{" "}
                     {new Date(invite.expiresAt).toLocaleString("pl-PL")}
                   </p>
+                  <div className="mt-1">
+                    <InviteLinkActions token={invite.token} />
+                  </div>
                 </div>
                 <form action={deleteInviteAction}>
                   <input type="hidden" name="inviteId" value={invite.id} />

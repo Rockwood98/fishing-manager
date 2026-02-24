@@ -17,6 +17,8 @@ export default async function InvitePage({
       ? "Ten link zaproszenia jest juz nieaktywny lub wygasl."
       : status === "not_found"
         ? "Nie znaleziono zaproszenia."
+        : status === "already_member"
+          ? "Juz jestes w tej grupie."
         : status === "error"
           ? "Nie udalo sie zaakceptowac zaproszenia. Sprobuj ponownie."
           : null;

@@ -95,29 +95,57 @@ export async function acceptInviteAction(token: string) {
   if (!session?.user?.id) {
     redirect(`/login?invite=${encodeURIComponent(token)}`);
   }
-  const userId = session.user.id;
+  const fallbackEmail = session.user.email?.toLowerCase().trim();
+  let userId = session.user.id;
+
+  const userExists = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true },
+  });
+  if (!userExists && fallbackEmail) {
+    const byEmail = await prisma.user.findUnique({
+      where: { email: fallbackEmail },
+      select: { id: true },
+    });
+    if (byEmail) {
+      userId = byEmail.id;
+    }
+  }
 
   const invite = await prisma.invite.findUnique({ where: { token } });
   if (!invite) {
     redirect(`/invite/${encodeURIComponent(token)}?status=not_found`);
   }
-  if (invite.status !== InviteStatus.PENDING || invite.expiresAt < new Date()) {
+  if (invite.expiresAt < new Date()) {
+    redirect(`/invite/${encodeURIComponent(token)}?status=expired`);
+  }
+  if (invite.status !== InviteStatus.PENDING) {
+    const alreadyMember = await prisma.membership.findUnique({
+      where: { groupId_userId: { groupId: invite.groupId, userId } },
+      select: { id: true },
+    });
+    if (alreadyMember) {
+      redirect("/app");
+    }
     redirect(`/invite/${encodeURIComponent(token)}?status=expired`);
   }
 
   try {
-    await prisma.$transaction([
-      prisma.membership.upsert({
-        where: { groupId_userId: { groupId: invite.groupId, userId } },
-        create: { groupId: invite.groupId, userId, role: invite.role },
-        update: {},
-      }),
-      prisma.invite.update({
-        where: { id: invite.id },
-        data: { status: InviteStatus.ACCEPTED, acceptedById: userId },
-      }),
-    ]);
-  } catch {
+    await prisma.membership.upsert({
+      where: { groupId_userId: { groupId: invite.groupId, userId } },
+      create: { groupId: invite.groupId, userId, role: invite.role },
+      update: {},
+    });
+
+    await prisma.invite.updateMany({
+      where: {
+        id: invite.id,
+        status: InviteStatus.PENDING,
+      },
+      data: { status: InviteStatus.ACCEPTED, acceptedById: userId },
+    });
+  } catch (error) {
+    console.error("acceptInviteAction error", error);
     redirect(`/invite/${encodeURIComponent(token)}?status=error`);
   }
 

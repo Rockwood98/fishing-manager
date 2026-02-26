@@ -99,7 +99,7 @@ export default async function DashboardPage() {
     <div className="space-y-4">
       <Card className="border-0 bg-gradient-to-br from-sky-600 to-cyan-700 text-white">
         <p className="text-xs uppercase tracking-wide text-white/80">Panel glowny</p>
-        <h1 className="mt-1 text-2xl font-bold">Hej, {me?.name?.trim() || "Wedkarzu"}</h1>
+        <h1 className="mt-1 text-2xl font-bold">Hej, {me?.name?.trim() || "Wedkarzu"}!</h1>
         <p className="mt-1 text-sm text-white/85">
           Szybki podglad stanu wyjazdow, listy rzeczy, rekordow i budzetu.
         </p>

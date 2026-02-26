@@ -101,32 +101,32 @@ export default async function DashboardPage() {
         </p>
       </Card>
 
-      <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-        <Card className="bg-white/90 p-2.5">
+      <div className="grid gap-1.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+        <Card className="bg-white/90 p-2">
           <div className="grid grid-cols-2 gap-2">
             <div>
               <p className="text-xs text-zinc-500">Wyjazdy</p>
-              <p className="mt-1 text-xl font-bold text-sky-700">{tripsCount}</p>
+              <p className="mt-0.5 text-lg font-bold text-sky-700">{tripsCount}</p>
             </div>
             <div className="min-w-0 text-right">
               <p className="text-xs text-zinc-500">Najblizszy wyjazd</p>
-              <p className="mt-1 truncate text-sm font-semibold text-zinc-800">{nearestTripStatus.title}</p>
+              <p className="mt-0.5 truncate text-xs font-semibold text-zinc-800">{nearestTripStatus.title}</p>
               <p className="mt-0.5 text-[11px] text-zinc-600">{nearestTripStatus.detail}</p>
             </div>
           </div>
         </Card>
-        <Card className="bg-white/90 p-2.5">
+        <Card className="bg-white/90 p-2">
           <p className="text-xs text-zinc-500">Rekordy ryb</p>
-          <p className="mt-1 text-xl font-bold text-emerald-700">{recordsCount}</p>
+          <p className="mt-0.5 text-lg font-bold text-emerald-700">{recordsCount}</p>
         </Card>
         <CurrentLocationWeatherCard />
-        <Card className="bg-white/90 p-2.5">
+        <Card className="bg-white/90 p-2">
           <p className="text-xs text-zinc-500">Twoj bilans</p>
-          <p className={`mt-1 text-xl font-bold ${myBalance >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
+          <p className={`mt-0.5 text-lg font-bold ${myBalance >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
             {myBalance >= 0 ? "+" : ""}
             {myBalance.toFixed(2)} PLN
           </p>
-          <div className="mt-1 text-[11px] text-zinc-600">
+          <div className="mt-0.5 text-[11px] text-zinc-600">
             {mySettlements.length ? (
               mySettlements.slice(0, 1).map((s, idx) => (
                 <p key={`${s.toUserId}-${idx}`}>

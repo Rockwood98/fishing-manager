@@ -92,7 +92,7 @@ export function CurrentLocationWeatherCard() {
   const nextDays = state.status === "ready" ? state.nextDays : [];
 
   return (
-    <Card className="bg-white/90 p-2.5">
+    <Card className="bg-white/90 p-2">
       <p className="text-xs text-zinc-500">Pogoda i kalendarz bran</p>
       {state.status === "loading" || state.status === "idle" ? (
         <div className="mt-2 flex items-center gap-2 text-xs text-zinc-600">
@@ -103,7 +103,7 @@ export function CurrentLocationWeatherCard() {
         <p className="mt-2 text-[11px] text-zinc-600">{state.message}</p>
       ) : weather ? (
         <>
-          <p className="mt-1 text-sm font-semibold text-sky-700">
+          <p className="mt-0.5 text-xs font-semibold text-sky-700">
             {Math.round(weather.temperature)} C, wiatr {Math.round(weather.windSpeed)} km/h
           </p>
           <p className="mt-1 text-[11px] text-zinc-600">
@@ -118,7 +118,7 @@ export function CurrentLocationWeatherCard() {
             </>
           ) : null}
           {nextDays.length ? (
-            <div className="mt-2 grid grid-cols-2 gap-1 text-[10px]">
+            <div className="mt-1.5 grid grid-cols-2 gap-1 text-[10px]">
               {nextDays.slice(0, 4).map((day) => (
                 <div key={day.date} className="rounded-md bg-zinc-100 px-1.5 py-1">
                   <p className="text-zinc-600">{shortDate(day.date)}</p>

@@ -87,11 +87,6 @@ function scoreDay(input: {
 
 export async function getFishingForecast(lat: number, lon: number, days = 5): Promise<FishingForecast> {
   const horizon = clamp(days, 3, 10);
-  const today = new Date();
-  const end = new Date(today);
-  end.setDate(end.getDate() + (horizon - 1));
-  const startDate = today.toISOString().slice(0, 10);
-  const endDate = end.toISOString().slice(0, 10);
 
   const url = new URL("https://api.open-meteo.com/v1/forecast");
   url.searchParams.set("latitude", String(lat));
@@ -106,8 +101,6 @@ export async function getFishingForecast(lat: number, lon: number, days = 5): Pr
     "daily",
     "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunrise,sunset",
   );
-  url.searchParams.set("start_date", startDate);
-  url.searchParams.set("end_date", endDate);
 
   const res = await fetch(url.toString(), { next: { revalidate: 900 } });
   if (!res.ok) throw new Error("Blad pobierania kalendarza bran.");

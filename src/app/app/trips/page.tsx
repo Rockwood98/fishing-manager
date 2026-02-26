@@ -56,8 +56,24 @@ function tripStatus(startsAt: Date, endsAt: Date) {
 
 type ViewMode = "list" | "week" | "month";
 
+function dayKeyInWarsaw(value: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Warsaw",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(value);
+  const year = parts.find((p) => p.type === "year")?.value ?? "0000";
+  const month = parts.find((p) => p.type === "month")?.value ?? "01";
+  const day = parts.find((p) => p.type === "day")?.value ?? "01";
+  return `${year}-${month}-${day}`;
+}
+
 function tripOnDay(day: Date, start: Date, end: Date) {
-  return isWithinInterval(day, { start, end });
+  const dayKey = dayKeyInWarsaw(day);
+  const startKey = dayKeyInWarsaw(start);
+  const endKey = dayKeyInWarsaw(end);
+  return dayKey >= startKey && dayKey <= endKey;
 }
 
 type TripWeatherDaily = {

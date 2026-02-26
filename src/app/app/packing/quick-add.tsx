@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { PACKING_CATEGORIES, getCategoryIcon } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ type Suggestion = {
   name: string;
   category: string;
   icon?: string | null;
+  needType?: "TO_BUY" | "TO_TAKE";
 };
 
 export function QuickAdd({
@@ -22,9 +23,8 @@ export function QuickAdd({
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<Suggestion[]>([]);
   const [category, setCategory] = useState("Inne");
-  const [icon, setIcon] = useState<string>(getCategoryIcon("Inne"));
+  const [needType, setNeedType] = useState<"TO_BUY" | "TO_TAKE">("TO_TAKE");
   const [catalogId, setCatalogId] = useState("");
-  const categoryIcon = useMemo(() => getCategoryIcon(category), [category]);
   const requestSeqRef = useRef(0);
 
   async function load(q: string) {
@@ -53,18 +53,18 @@ export function QuickAdd({
       action={async (formData) => {
         formData.set("tripId", tripId);
         formData.set("category", category);
-        formData.set("icon", icon || categoryIcon);
+        formData.set("needType", needType);
         if (catalogId) formData.set("catalogItemId", catalogId);
         await onSubmit(formData);
         setQuery("");
         setItems([]);
         setCatalogId("");
         setCategory("Inne");
-        setIcon(getCategoryIcon("Inne"));
+        setNeedType("TO_TAKE");
       }}
       className="space-y-2"
     >
-      <div className="grid gap-2 sm:grid-cols-[1fr_170px_90px_auto]">
+      <div className="grid gap-2 sm:grid-cols-[1fr_170px_auto]">
         <div className="min-w-0">
           <Input
             name="name"
@@ -86,7 +86,7 @@ export function QuickAdd({
                   onClick={() => {
                     setQuery(s.name);
                     setCategory(s.category);
-                    setIcon(s.icon || getCategoryIcon(s.category));
+                    setNeedType(s.needType === "TO_BUY" ? "TO_BUY" : "TO_TAKE");
                     setCatalogId(s.id);
                     setItems([]);
                   }}
@@ -102,9 +102,6 @@ export function QuickAdd({
           value={category}
           onChange={(e) => {
             setCategory(e.target.value);
-            if (!icon.trim() || icon === getCategoryIcon(category)) {
-              setIcon(getCategoryIcon(e.target.value));
-            }
           }}
           className="h-10 rounded-xl border border-zinc-300 bg-white px-3 text-sm"
         >
@@ -114,15 +111,20 @@ export function QuickAdd({
             </option>
           ))}
         </select>
-        <Input
-          name="iconUi"
-          value={icon}
-          onChange={(e) => setIcon(e.target.value)}
-          placeholder="Ikona"
-          maxLength={4}
-        />
         <Button type="submit">Dodaj</Button>
       </div>
+      <label className="inline-flex items-center gap-2 text-sm text-zinc-700">
+        <input
+          type="checkbox"
+          checked={needType === "TO_BUY"}
+          onChange={(e) => setNeedType(e.target.checked ? "TO_BUY" : "TO_TAKE")}
+          className="size-4 rounded border-zinc-300"
+        />
+        To jest artykul do kupienia
+      </label>
+      <p className="text-xs text-zinc-500">
+        Typ pozycji: {needType === "TO_BUY" ? "Do kupienia" : "Do zabrania"}.
+      </p>
     </form>
   );
 }

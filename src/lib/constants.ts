@@ -1,10 +1,19 @@
 export const PACKING_CATEGORIES = [
   { name: "Jedzenie", icon: "🥕" },
+  { name: "Napoje", icon: "🥤" },
+  { name: "Przyprawy", icon: "🧂" },
   { name: "Sprzet", icon: "🎣" },
-  { name: "Nocleg", icon: "⛺" },
-  { name: "Elektronika", icon: "🔋" },
-  { name: "Ubrania", icon: "🧥" },
+  { name: "Narzedzia", icon: "🛠️" },
   { name: "Przynety", icon: "🪱" },
+  { name: "Nocleg", icon: "⛺" },
+  { name: "Ubrania", icon: "🧥" },
+  { name: "Elektronika", icon: "🔋" },
+  { name: "Akcesoria kuchenne", icon: "🍳" },
+  { name: "Srodki czystosci", icon: "🧼" },
+  { name: "Srodki higieniczne", icon: "🪥" },
+  { name: "Apteczka", icon: "🩹" },
+  { name: "Akcesoria", icon: "🧰" },
+  { name: "Dokumenty", icon: "📄" },
   { name: "Inne", icon: "📦" },
 ] as const;
 

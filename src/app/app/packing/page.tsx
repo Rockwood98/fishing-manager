@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { LoadingSubmitButton } from "@/components/ui/loading-submit-button";
+import { PackingNeedType } from "@prisma/client";
 import { getCategoryIcon } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { getAppContext } from "@/server/context";
@@ -19,9 +20,10 @@ const TEMPLATE_PREFIX = "TEMPLATE::";
 export default async function PackingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tripId?: string }>;
+  searchParams: Promise<{ tripId?: string; tab?: string }>;
 }) {
-  const { tripId } = await searchParams;
+  const { tripId, tab } = await searchParams;
+  const activeTab = tab === "buy" || tab === "take" ? tab : "all";
   const ctx = await getAppContext();
   const [templateRows, trips] = await Promise.all([
     prisma.packingCatalogItem.findMany({
@@ -47,7 +49,14 @@ export default async function PackingPage({
   const selectedTrip = trips.find((t) => t.id === tripId) ?? trips[0];
   const tripItems = selectedTrip
     ? await prisma.tripPackingItem.findMany({
-        where: { tripId: selectedTrip.id },
+        where: {
+          tripId: selectedTrip.id,
+          ...(activeTab === "buy"
+            ? { needType: PackingNeedType.TO_BUY }
+            : activeTab === "take"
+              ? { needType: PackingNeedType.TO_TAKE }
+              : {}),
+        },
         orderBy: [{ checked: "asc" }, { sortOrder: "asc" }, { updatedAt: "desc" }],
       })
     : [];
@@ -79,6 +88,27 @@ export default async function PackingPage({
           <>
             <div className="mt-3">
               <QuickAdd tripId={selectedTrip.id} onSubmit={addTripItemAction} />
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a
+                href={`/app/packing?tripId=${selectedTrip.id}&tab=all`}
+                className={`rounded-lg px-3 py-1 text-sm ${activeTab === "all" ? "bg-sky-100 text-sky-700" : "bg-zinc-100 text-zinc-700"}`}
+              >
+                Wszystkie
+              </a>
+              <a
+                href={`/app/packing?tripId=${selectedTrip.id}&tab=buy`}
+                className={`rounded-lg px-3 py-1 text-sm ${activeTab === "buy" ? "bg-amber-100 text-amber-700" : "bg-zinc-100 text-zinc-700"}`}
+              >
+                Do kupienia
+              </a>
+              <a
+                href={`/app/packing?tripId=${selectedTrip.id}&tab=take`}
+                className={`rounded-lg px-3 py-1 text-sm ${activeTab === "take" ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-700"}`}
+              >
+                Do zabrania
+              </a>
             </div>
 
             <div className="mt-4 rounded-xl border border-zinc-200 p-3">
@@ -138,6 +168,15 @@ export default async function PackingPage({
                     />
                     <span>
                       {item.icon || getCategoryIcon(item.category)} {item.name}
+                    </span>
+                    <span
+                      className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        item.needType === PackingNeedType.TO_BUY
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}
+                    >
+                      {item.needType === PackingNeedType.TO_BUY ? "Kupic" : "Zabrac"}
                     </span>
                   </form>
                   <form action={removeTripItemAction}>

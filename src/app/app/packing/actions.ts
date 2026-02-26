@@ -1,6 +1,6 @@
 "use server";
 
-import { GroupRole } from "@prisma/client";
+import { GroupRole, PackingNeedType } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCategoryIcon } from "@/lib/constants";
@@ -12,7 +12,7 @@ const TEMPLATE_PREFIX = "TEMPLATE::";
 const itemSchema = z.object({
   name: z.string().trim().min(1).max(120),
   category: z.string().trim().min(1).max(40),
-  icon: z.string().trim().max(6).optional(),
+  needType: z.nativeEnum(PackingNeedType).default(PackingNeedType.TO_TAKE),
 });
 
 export async function addCatalogItemAction(formData: FormData) {
@@ -20,7 +20,7 @@ export async function addCatalogItemAction(formData: FormData) {
   const parsed = itemSchema.safeParse({
     name: formData.get("name"),
     category: formData.get("category") || "Inne",
-    icon: formData.get("icon")?.toString() || undefined,
+    needType: formData.get("needType") || PackingNeedType.TO_TAKE,
   });
   if (!parsed.success) throw new Error("Niepoprawne dane");
   const count = await prisma.packingCatalogItem.count({
@@ -31,7 +31,8 @@ export async function addCatalogItemAction(formData: FormData) {
       groupId: ctx.group.id,
       name: parsed.data.name,
       category: parsed.data.category,
-      icon: parsed.data.icon || getCategoryIcon(parsed.data.category),
+      icon: getCategoryIcon(parsed.data.category),
+      needType: parsed.data.needType,
       sortOrder: count,
       createdById: ctx.userId,
       updatedById: ctx.userId,
@@ -47,10 +48,10 @@ export async function addTripItemAction(formData: FormData) {
   const parsed = itemSchema.safeParse({
     name: formData.get("name"),
     category: formData.get("category") || "Inne",
-    icon: formData.get("icon")?.toString() || undefined,
+    needType: formData.get("needType") || PackingNeedType.TO_TAKE,
   });
   if (!parsed.success) throw new Error("Niepoprawne dane");
-  const resolvedIcon = parsed.data.icon || getCategoryIcon(parsed.data.category);
+  const resolvedIcon = getCategoryIcon(parsed.data.category);
 
   let catalogId = catalogIdFromForm;
   if (!catalogId) {
@@ -76,6 +77,7 @@ export async function addTripItemAction(formData: FormData) {
           name: parsed.data.name,
           category: parsed.data.category,
           icon: resolvedIcon,
+          needType: parsed.data.needType,
           sortOrder: count,
           createdById: ctx.userId,
           updatedById: ctx.userId,
@@ -93,6 +95,7 @@ export async function addTripItemAction(formData: FormData) {
       name: parsed.data.name,
       category: parsed.data.category,
       icon: resolvedIcon,
+      needType: parsed.data.needType,
       sortOrder: order,
       source: catalogId ? "catalog" : "adhoc",
       createdById: ctx.userId,
@@ -172,6 +175,7 @@ export async function applyTemplateAction(formData: FormData) {
       name: item.name,
       category: item.category.replace(`${TEMPLATE_PREFIX}${templateName}::`, ""),
       icon: item.icon || getCategoryIcon("Inne"),
+      needType: item.needType,
       sortOrder: count + i,
       source: "template",
       createdById: ctx.userId,
@@ -206,6 +210,7 @@ export async function saveTemplateFromTripAction(formData: FormData) {
         name: item.name,
         category: `${TEMPLATE_PREFIX}${templateName}::${item.category}`,
         icon: item.icon || null,
+        needType: item.needType,
         sortOrder: i,
         usedCount: 0,
         archived: true,

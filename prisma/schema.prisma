@@ -25,6 +25,11 @@ enum BudgetEntryType {
   EXPENSE
 }
 
+enum PackingNeedType {
+  TO_BUY
+  TO_TAKE
+}
+
 model User {
   id                 String       @id @default(cuid())
   name               String
@@ -160,6 +165,7 @@ model PackingCatalogItem {
   usedCount     Int      @default(0)
   lastUsedAt    DateTime?
   archived      Boolean  @default(false)
+  needType      PackingNeedType @default(TO_TAKE)
   createdById   String
   updatedById   String
   createdAt     DateTime @default(now())
@@ -183,6 +189,7 @@ model TripPackingItem {
   checked             Boolean  @default(false)
   sortOrder           Int      @default(0)
   source              String   @default("catalog")
+  needType            PackingNeedType @default(TO_TAKE)
   createdById         String
   updatedById         String
   createdAt           DateTime @default(now())

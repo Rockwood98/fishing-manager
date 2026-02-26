@@ -134,10 +134,12 @@ export function CurrentLocationWeatherCard() {
               {nextDays.slice(0, 4).map((day) => (
                 <div key={day.date} className="rounded-md bg-zinc-100 px-1.5 py-1">
                   <p className="text-zinc-600">{shortDate(day.date)}</p>
-                  <p className="text-zinc-700">
-                    {weatherIcon(day.weatherCode)} {day.tempAvg} C
-                  </p>
-                  <p className={`font-semibold ${levelClass(day.level)}`}>{levelLabel(day.level)}</p>
+                  <div className="mt-0.5 flex items-center justify-between gap-1">
+                    <p className="text-zinc-700">
+                      {weatherIcon(day.weatherCode)} {day.tempAvg} C
+                    </p>
+                    <p className={`font-semibold ${levelClass(day.level)}`}>{levelLabel(day.level)}</p>
+                  </div>
                 </div>
               ))}
             </div>

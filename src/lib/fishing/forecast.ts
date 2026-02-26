@@ -3,6 +3,8 @@ export type FishingDayForecast = {
   score: number;
   level: "slabe" | "srednie" | "dobre" | "bardzo_dobre";
   reason: string;
+  tempAvg: number;
+  weatherCode?: number;
 };
 
 export type FishingForecast = {
@@ -29,6 +31,7 @@ type OpenMeteoResponse = {
     temperature_2m_min: number[];
     precipitation_sum: number[];
     wind_speed_10m_max: number[];
+    weather_code: number[];
     sunrise: string[];
     sunset: string[];
   };
@@ -99,7 +102,7 @@ export async function getFishingForecast(lat: number, lon: number, days = 5): Pr
   );
   url.searchParams.set(
     "daily",
-    "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,sunrise,sunset",
+    "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code,sunrise,sunset",
   );
 
   const res = await fetch(url.toString(), { next: { revalidate: 900 } });
@@ -121,6 +124,8 @@ export async function getFishingForecast(lat: number, lon: number, days = 5): Pr
       score,
       level,
       reason: reasonFromScore(level),
+      tempAvg: Math.round((data.daily.temperature_2m_max[i] + data.daily.temperature_2m_min[i]) / 2),
+      weatherCode: data.daily.weather_code?.[i],
     };
   });
 

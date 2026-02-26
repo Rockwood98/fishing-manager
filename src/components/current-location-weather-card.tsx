@@ -16,6 +16,8 @@ type ForecastDay = {
   score: number;
   level: "slabe" | "srednie" | "dobre" | "bardzo_dobre";
   reason: string;
+  tempAvg: number;
+  weatherCode?: number;
 };
 
 type UiState =
@@ -43,6 +45,16 @@ function shortDate(isoDate: string) {
     month: "2-digit",
     timeZone: "Europe/Warsaw",
   }).format(new Date(isoDate));
+}
+
+function weatherIcon(code?: number) {
+  if (typeof code !== "number") return "⛅";
+  if (code === 0) return "☀️";
+  if ([1, 2, 3, 45, 48].includes(code)) return "☁️";
+  if ([51, 53, 55, 56, 57, 61, 63, 65, 80, 81, 82].includes(code)) return "🌧️";
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return "❄️";
+  if ([95, 96, 99].includes(code)) return "⛈️";
+  return "⛅";
 }
 
 export function CurrentLocationWeatherCard() {
@@ -122,6 +134,9 @@ export function CurrentLocationWeatherCard() {
               {nextDays.slice(0, 4).map((day) => (
                 <div key={day.date} className="rounded-md bg-zinc-100 px-1.5 py-1">
                   <p className="text-zinc-600">{shortDate(day.date)}</p>
+                  <p className="text-zinc-700">
+                    {weatherIcon(day.weatherCode)} {day.tempAvg} C
+                  </p>
                   <p className={`font-semibold ${levelClass(day.level)}`}>{levelLabel(day.level)}</p>
                 </div>
               ))}

@@ -103,17 +103,15 @@ export default async function DashboardPage() {
 
       <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         <Card className="bg-white/90 p-2.5">
-          <p className="text-xs text-zinc-500">Wyjazdy</p>
-          <div className="mt-2 flex items-start justify-between gap-2">
-            <div className="shrink-0">
-              <p className="text-xl font-bold text-sky-700">{tripsCount}</p>
-              <p className="text-[11px] text-zinc-500">Liczba wyjazdow</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <p className="text-xs text-zinc-500">Wyjazdy</p>
+              <p className="mt-1 text-xl font-bold text-sky-700">{tripsCount}</p>
             </div>
             <div className="min-w-0 text-right">
-              <p className="truncate text-sm font-semibold text-amber-700">{nearestTripStatus.title}</p>
-              <p className="mt-1 inline-block rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-700">
-                {nearestTripStatus.detail}
-              </p>
+              <p className="text-xs text-zinc-500">Najblizszy wyjazd</p>
+              <p className="mt-1 truncate text-sm font-semibold text-zinc-800">{nearestTripStatus.title}</p>
+              <p className="mt-0.5 text-[11px] text-zinc-600">{nearestTripStatus.detail}</p>
             </div>
           </div>
         </Card>

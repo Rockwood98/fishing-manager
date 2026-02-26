@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 
 import { addMonths, format, parse } from "date-fns";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
+import { Spinner } from "@/components/ui/spinner";
 
 type ViewMode = "list" | "week" | "month";
 
@@ -40,7 +41,7 @@ export function TripsControls({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          className={`rounded-lg px-3 py-1 text-sm ${currentView === "month" ? "bg-sky-100 text-sky-700" : "bg-zinc-100"}`}
+          className={`rounded-lg px-3 py-1 text-sm ${currentView === "month" ? "bg-sky-100 text-sky-700" : "bg-zinc-100"} ${pending ? "opacity-70" : ""}`}
           onClick={() => navigate("month", currentMonth)}
           disabled={pending}
         >
@@ -48,7 +49,7 @@ export function TripsControls({
         </button>
         <button
           type="button"
-          className={`rounded-lg px-3 py-1 text-sm ${currentView === "week" ? "bg-sky-100 text-sky-700" : "bg-zinc-100"}`}
+          className={`rounded-lg px-3 py-1 text-sm ${currentView === "week" ? "bg-sky-100 text-sky-700" : "bg-zinc-100"} ${pending ? "opacity-70" : ""}`}
           onClick={() => navigate("week")}
           disabled={pending}
         >
@@ -56,12 +57,18 @@ export function TripsControls({
         </button>
         <button
           type="button"
-          className={`rounded-lg px-3 py-1 text-sm ${currentView === "list" ? "bg-sky-100 text-sky-700" : "bg-zinc-100"}`}
+          className={`rounded-lg px-3 py-1 text-sm ${currentView === "list" ? "bg-sky-100 text-sky-700" : "bg-zinc-100"} ${pending ? "opacity-70" : ""}`}
           onClick={() => navigate("list")}
           disabled={pending}
         >
           Lista
         </button>
+        {pending ? (
+          <span className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700">
+            <Spinner className="size-3 text-sky-700" />
+            Ladowanie
+          </span>
+        ) : null}
       </div>
 
       {currentView === "month" ? (
@@ -72,16 +79,16 @@ export function TripsControls({
             disabled={pending}
             className="rounded-lg border border-zinc-200 px-3 py-1 text-sm hover:bg-zinc-50 disabled:opacity-60"
           >
-            ← Poprzedni
+            {"<-"} Poprzedni
           </button>
-          <span className="text-xs text-zinc-500">{pending ? "Ladowanie..." : " "}</span>
+          <span className="text-xs text-zinc-500">{pending ? "Trwa zmiana widoku..." : " "}</span>
           <button
             type="button"
             onClick={() => navigate("month", format(addMonths(monthDate, 1), "yyyy-MM"))}
             disabled={pending}
             className="rounded-lg border border-zinc-200 px-3 py-1 text-sm hover:bg-zinc-50 disabled:opacity-60"
           >
-            Nastepny →
+            Nastepny {"->"}
           </button>
         </div>
       ) : null}

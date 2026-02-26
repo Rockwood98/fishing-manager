@@ -103,17 +103,15 @@ export default async function DashboardPage() {
 
       <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         <Card className="bg-white/90 p-2.5">
-          <p className="text-xs text-zinc-500">Wyjazdy</p>
+          <p className="text-xs text-zinc-500">Wyjazdy i najblizszy termin</p>
           <p className="mt-1 text-xl font-bold text-sky-700">{tripsCount}</p>
+          <p className="text-[11px] text-zinc-500">Liczba wyjazdow</p>
+          <p className="mt-1 text-sm font-bold text-amber-700">{nearestTripStatus.title}</p>
+          <p className="mt-1 text-xs text-zinc-600">{nearestTripStatus.detail}</p>
         </Card>
         <Card className="bg-white/90 p-2.5">
           <p className="text-xs text-zinc-500">Rekordy ryb</p>
           <p className="mt-1 text-xl font-bold text-emerald-700">{recordsCount}</p>
-        </Card>
-        <Card className="bg-white/90 p-2.5">
-          <p className="text-xs text-zinc-500">Najblizszy wyjazd</p>
-          <p className="mt-1 text-sm font-bold text-amber-700">{nearestTripStatus.title}</p>
-          <p className="mt-1 text-xs text-zinc-600">{nearestTripStatus.detail}</p>
         </Card>
         <CurrentLocationWeatherCard />
         <Card className="bg-white/90 p-2.5">

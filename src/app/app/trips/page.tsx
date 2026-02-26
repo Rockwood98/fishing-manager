@@ -292,18 +292,18 @@ export default async function TripsPage({
                     {tripParticipants.map((participant) => (
                       <div
                         key={`${trip.id}-${participant.id}`}
-                        className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs"
+                        className="inline-flex max-w-[170px] items-center gap-1 rounded-full border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[11px]"
                       >
-                        <span>{participant.name}</span>
+                        <span className="truncate">{participant.name}</span>
                         {ctx.membership.role !== "MEMBER" ? (
                           <form action={removeTripParticipantAction}>
                             <input type="hidden" name="tripId" value={trip.id} />
                             <input type="hidden" name="userId" value={participant.id} />
                             <LoadingSubmitButton
-                              idleText="Usun"
+                              idleText="×"
                               pendingText="..."
                               variant="ghost"
-                              className="h-6 px-2 text-[11px] text-rose-600"
+                              className="h-5 min-w-5 px-1 text-sm leading-none text-rose-600"
                             />
                           </form>
                         ) : null}

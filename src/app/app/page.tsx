@@ -102,12 +102,18 @@ export default async function DashboardPage() {
       </Card>
 
       <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-        <Card className="bg-white/90 p-2.5">
-          <p className="text-xs text-zinc-500">Wyjazdy i najblizszy termin</p>
-          <p className="mt-1 text-xl font-bold text-sky-700">{tripsCount}</p>
-          <p className="text-[11px] text-zinc-500">Liczba wyjazdow</p>
-          <p className="mt-1 text-sm font-bold text-amber-700">{nearestTripStatus.title}</p>
-          <p className="mt-1 text-xs text-zinc-600">{nearestTripStatus.detail}</p>
+        <Card className="bg-white/90 p-3">
+          <p className="text-xs text-zinc-500">Wyjazdy</p>
+          <div className="mt-1 grid grid-cols-2 gap-2">
+            <div>
+              <p className="text-2xl font-bold text-sky-700">{tripsCount}</p>
+              <p className="text-[11px] text-zinc-500">Liczba wyjazdow</p>
+            </div>
+            <div>
+              <p className="truncate text-sm font-bold text-amber-700">{nearestTripStatus.title}</p>
+              <p className="mt-1 text-xs text-zinc-600">{nearestTripStatus.detail}</p>
+            </div>
+          </div>
         </Card>
         <Card className="bg-white/90 p-2.5">
           <p className="text-xs text-zinc-500">Rekordy ryb</p>

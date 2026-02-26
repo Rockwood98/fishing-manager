@@ -5,6 +5,18 @@ type NominatimPlace = {
   display_name: string;
   lat: string;
   lon: string;
+  address?: {
+    city?: string;
+    town?: string;
+    village?: string;
+    hamlet?: string;
+    municipality?: string;
+    county?: string;
+    state?: string;
+    road?: string;
+    house_number?: string;
+    postcode?: string;
+  };
 };
 
 const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
@@ -19,7 +31,7 @@ async function searchNominatim(
   url.searchParams.set("q", query);
   url.searchParams.set("format", "jsonv2");
   url.searchParams.set("limit", BASE_LIMIT);
-  url.searchParams.set("addressdetails", "0");
+  url.searchParams.set("addressdetails", "1");
 
   if (options.countryCodes) {
     url.searchParams.set("countrycodes", options.countryCodes);
@@ -37,6 +49,34 @@ async function searchNominatim(
   return (await res.json()) as NominatimPlace[];
 }
 
+function formatPlaceLabel(place: NominatimPlace) {
+  const address = place.address ?? {};
+  const locality =
+    address.city ??
+    address.town ??
+    address.village ??
+    address.hamlet ??
+    address.municipality ??
+    place.display_name.split(",")[0]?.trim() ??
+    "Miejsce";
+  const state = address.state ? `woj. ${address.state}` : null;
+  const road = address.road;
+  const house = address.house_number;
+  const postcode = address.postcode;
+
+  if (road) {
+    const streetPart = house ? `ul. ${road} ${house}` : `ul. ${road}`;
+    const postPart = postcode ? `${postcode} ` : "";
+    return `${locality}, ${streetPart}, ${postPart}${state ?? ""}`.trim().replace(/\s+,/g, ",");
+  }
+
+  if (state) {
+    return `${locality}, ${state}`;
+  }
+
+  return locality;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim();
@@ -52,7 +92,8 @@ export async function GET(request: Request) {
   return NextResponse.json({
     items: data.map((x) => ({
       id: x.place_id,
-      label: x.display_name,
+      label: formatPlaceLabel(x),
+      fullLabel: x.display_name,
       lat: Number(x.lat),
       lon: Number(x.lon),
     })),

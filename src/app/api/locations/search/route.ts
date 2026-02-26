@@ -59,7 +59,13 @@ function formatPlaceLabel(place: NominatimPlace) {
     address.municipality ??
     place.display_name.split(",")[0]?.trim() ??
     "Miejsce";
-  const state = address.state ? `woj. ${address.state}` : null;
+  const normalizedState = address.state
+    ? address.state
+        .replace(/^woj(?:e|ó)?w(?:ó|o)dztwo\s+/i, "")
+        .replace(/^woj\.\s*/i, "")
+        .trim()
+    : null;
+  const state = normalizedState ? `woj. ${normalizedState}` : null;
   const road = address.road;
   const house = address.house_number;
   const postcode = address.postcode;

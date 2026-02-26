@@ -60,3 +60,15 @@ input[type="datetime-local"] {
     padding-right: 2.5rem;
   }
 }
+
+.weather-summary .label-open {
+  display: none;
+}
+
+details[open] .weather-summary .label-open {
+  display: inline;
+}
+
+details[open] .weather-summary .label-closed {
+  display: none;
+}

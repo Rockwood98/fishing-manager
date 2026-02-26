@@ -343,8 +343,9 @@ export default async function TripsPage({
                     </div>
                   ) : null}
                   <details className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50">
-                    <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium text-sky-700">
-                      Pokaz pogode
+                    <summary className="weather-summary cursor-pointer list-none px-3 py-2 text-sm font-medium text-sky-700">
+                      <span className="label-closed">Pokaz pogode</span>
+                      <span className="label-open">Zwin pogode</span>
                     </summary>
                     <div className="p-2">
                       <WeatherPanel tripId={trip.id} cached={trip.weatherCache as never} />

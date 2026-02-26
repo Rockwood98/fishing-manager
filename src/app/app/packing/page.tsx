@@ -13,6 +13,7 @@ import {
   toggleTripItemAction,
 } from "./actions";
 import { QuickAdd } from "./quick-add";
+import { PackingTabs } from "./packing-tabs";
 import { PackingTripPicker } from "./trip-picker";
 
 const TEMPLATE_PREFIX = "TEMPLATE::";
@@ -90,26 +91,7 @@ export default async function PackingPage({
               <QuickAdd tripId={selectedTrip.id} onSubmit={addTripItemAction} />
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              <a
-                href={`/app/packing?tripId=${selectedTrip.id}&tab=all`}
-                className={`rounded-lg px-3 py-1 text-sm ${activeTab === "all" ? "bg-sky-100 text-sky-700" : "bg-zinc-100 text-zinc-700"}`}
-              >
-                Wszystkie
-              </a>
-              <a
-                href={`/app/packing?tripId=${selectedTrip.id}&tab=buy`}
-                className={`rounded-lg px-3 py-1 text-sm ${activeTab === "buy" ? "bg-amber-100 text-amber-700" : "bg-zinc-100 text-zinc-700"}`}
-              >
-                Do kupienia
-              </a>
-              <a
-                href={`/app/packing?tripId=${selectedTrip.id}&tab=take`}
-                className={`rounded-lg px-3 py-1 text-sm ${activeTab === "take" ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-700"}`}
-              >
-                Do zabrania
-              </a>
-            </div>
+            <PackingTabs activeTab={activeTab} tripId={selectedTrip.id} />
 
             <div className="mt-4 rounded-xl border border-zinc-200 p-3">
               <h3 className="font-medium">Szablony grupy</h3>

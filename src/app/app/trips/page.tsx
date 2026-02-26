@@ -82,18 +82,18 @@ function buildDailyWeatherMap(trips: Array<{ id: string; weatherCache: unknown }
 }
 
 function weatherIcon(day: TripWeatherDaily | null) {
-  if (!day) return "*";
+  if (!day) return "•";
   const code = day.weatherCode;
   if (typeof code === "number") {
-    if (code === 0) return "SUN";
-    if ([1, 2, 3, 45, 48].includes(code)) return "CLOUD";
-    if ([51, 53, 55, 56, 57, 61, 63, 65, 80, 81, 82].includes(code)) return "RAIN";
-    if ([71, 73, 75, 77, 85, 86].includes(code)) return "SNOW";
-    if ([95, 96, 99].includes(code)) return "STORM";
+    if (code === 0) return "☀️";
+    if ([1, 2, 3, 45, 48].includes(code)) return "☁️";
+    if ([51, 53, 55, 56, 57, 61, 63, 65, 80, 81, 82].includes(code)) return "🌧️";
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return "❄️";
+    if ([95, 96, 99].includes(code)) return "⛈️";
   }
-  if ((day.precipitationSum ?? 0) > 0.8) return "RAIN";
-  if ((day.precipitationSum ?? 0) > 0.1) return "CLOUD";
-  return "SUN";
+  if ((day.precipitationSum ?? 0) > 0.8) return "🌧️";
+  if ((day.precipitationSum ?? 0) > 0.1) return "☁️";
+  return "☀️";
 }
 
 function avgTemp(day: TripWeatherDaily | null) {
